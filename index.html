@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freelancer Payment Assurance</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #F3F4F6; color: #1F2937; padding-bottom: 70px; }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #1E3A5F 0%, #2D5A87 100%); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 22px; font-weight: 600; }
+        .header p { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+        /* Container */
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; border-top: 1px solid #E5E7EB; padding: 8px 0; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; padding: 8px; color: #9CA3AF; font-size: 12px; cursor: pointer; }
+        .nav-item.active { color: #1E3A5F; font-weight: 600; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+        /* Views */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Cards */
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .stat-card.outstanding { border-left: 4px solid #F59E0B; }
+        .stat-card.overdue { border-left: 4px solid #EF4444; }
+        .stat-card.revenue { border-left: 4px solid #10B981; }
+        .stat-card.paid { border-left: 4px solid #3B82F6; }
+        .stat-value { font-size: 24px; font-weight: 700; color: #1F2937; }
+        .stat-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+
+        /* Forms */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+
+        /* Buttons */
+        .btn { padding: 12px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #1E3A5F; color: white; width: 100%; }
+        .btn-primary:hover { background: #2D5A87; }
+        .btn-success { background: #10B981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-secondary { background: #F3F4F6; color: #374151; }
+        .btn-small { padding: 8px 12px; font-size: 12px; }
+        .btn-block { width: 100%; margin-top: 12px; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #E5E7EB; }
+        th { background: #F9FAFB; font-weight: 600; color: #374151; }
+        
+        /* Status Badges */
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .status-draft { background: #F3F4F6; color: #6B7280; }
+        .status-sent { background: #DBEAFE; color: #1E40AF; }
+        .status-paid { background: #D1FAE5; color: #065F46; }
+        .status-overdue { background: #FEE2E2; color: #991B1B; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; }
+        .tab { padding: 10px 16px; border-radius: 20px; background: white; border: 1px solid #E5E7EB; font-size: 13px; white-space: nowrap; cursor: pointer; }
+        .tab.active { background: #1E3A5F; color: white; border-color: #1E3A5F; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 40px 20px; color: #6B7280; }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 12px; padding: 24px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-close { cursor: pointer; font-size: 24px; color: #6B7280; }
+
+        /* Milestone */
+        .milestone { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #F9FAFB; border-radius: 8px; margin-bottom: 8px; }
+        .milestone-info { flex: 1; }
+        .milestone-title { font-weight: 500; }
+        .milestone-amount { font-size: 14px; color: #6B7280; }
+        .milestone-status { font-size: 11px; padding: 4px 8px; border-radius: 8px; }
+        .milestone-pending { background: #FEF3C7; color: #92400E; }
+        .milestone-released { background: #D1FAE5; color: #065F46; }
+
+        /* Section Header */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 16px; font-weight: 600; color: #1F2937; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Payment Assurance</h1>
+        <p>Track invoices, protect your payments</p>
+    </div>
+
+    <div class="container">
+        <!-- Dashboard View -->
+        <div id="view-dashboard" class="view active">
+            <div class="stats-grid">
+                <div class="stat-card outstanding">
+                    <div class="stat-value" id="stat-outstanding">$0</div>
+                    <div class="stat-label">Outstanding</div>
+                </div>
+                <div class="stat-card overdue">
+                    <div class="stat-value" id="stat-overdue">$0</div>
+                    <div class="stat-label">Overdue</div>
+                </div>
+                <div class="stat-card revenue">
+                    <div class="stat-value" id="stat-revenue">$0</div>
+                    <div class="stat-label">This Month</div>
+                </div>
+                <div class="stat-card paid">
+                    <div class="stat-value" id="stat-paid">$0</div>
+                    <div class="stat-label">Paid This Month</div>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" data-filter="all">All</button>
+                <button class="tab" data-filter="overdue">Overdue</button>
+                <button class="tab" data-filter="sent">Sent</button>
+                <button class="tab" data-filter="paid">Paid</button>
+            </div>
+
+            <div id="invoices-container"></div>
+        </div>
+
+        <!-- Clients View -->
+        <div id="view-clients" class="view">
+            <div class="section-header">
+                <span class="section-title">Clients</span>
+                <button class="btn btn-small btn-primary" onclick="openClientModal()">+ Add Client</button>
+            </div>
+            <div id="clients-container"></div>
+        </div>
+
+        <!-- Projects View -->
+        <div id="view-projects" class="view">
+            <div class="section-header">
+                <span class="section-title">Projects & Invoices</span>
+                <button class="btn btn-small btn-primary" onclick="openProjectModal()">+ New Project</button>
+            </div>
+            <div id="projects-container"></div>
+        </div>
+
+        <!-- Export View -->
+        <div id="view-export" class="view">
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">Export Data</h3>
+                <button class="btn btn-primary btn-block" onclick="exportInvoicesCSV()">Export Invoices (CSV)</button>
+                <button class="btn btn-secondary btn-block" onclick="exportClientsCSV()">Export Clients (CSV)</button>
+            </div>
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">Danger Zone</h3>
+                <button class="btn btn-danger btn-block" onclick="clearAllData()">Clear All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" data-view="dashboard">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-view="clients">
+            <span class="nav-icon">👥</span>
+            <span>Clients</span>
+        </div>
+        <div class="nav-item" data-view="projects">
+            <span class="nav-icon">📁</span>
+            <span>Projects</span>
+        </div>
+        <div class="nav-item" data-view="export">
+            <span class="nav-icon">📤</span>
+            <span>Export</span>
+        </div>
+    </nav>
+
+    <!-- Client Modal -->
+    <div id="client-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Add Client</span>
+                <span class="modal-close" onclick="closeModal('client-modal')">&times;</span>
+            </div>
+            <form id="client-form">
+                <div class="form-group">
+                    <label>Client Name *</label>
+                    <input type="text" id="client-name" required placeholder="Company or individual name">
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="client-email" required placeholder="client@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Default Hourly Rate ($)</label>
+                    <input type="number" id="client-rate" placeholder="e.g. 100">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="client-notes" placeholder="Any notes about this client..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Client</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>New Project/Invoice</span>
+                <span class="modal-close" onclick="closeModal('project-modal')">&times;</span>
+            </div>
+            <form id="project-form">
+                <div class="form-group">
+                    <label>Client *</label>
+                    <select id="project-client" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Project Name *</label>
+                    <input type="text" id="project-name" required placeholder="Project description">
+                </div>
+                <div class="form-group">
+                    <label>Amount ($) *</label>
+                    <input type="number" id="project-amount" required placeholder="Total amount">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" id="project-due">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="project-status">
+                            <option value="draft">Draft</option>
+                            <option value="sent">Sent</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Project</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Milestone Modal -->
+    <div id="milestone-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Add Milestone</span>
+                <span class="modal-close" onclick="closeModal('milestone-modal')">&times;</span>
+            </div>
+            <form id="milestone-form">
+                <input type="hidden" id="milestone-project-id">
+                <div class="form-group">
+                    <label>Milestone Name *</label>
+                    <input type="text" id="milestone-name" required placeholder="e.g. Initial delivery">
+                </div>
+                <div class="form-group">
+                    <label>Amount ($) *</label>
+                    <input type="number" id="milestone-amount" required placeholder="Amount for this milestone">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Milestone</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let clients = JSON.parse(localStorage.getItem('payment-clients') || '[]');
+        let projects = JSON.parse(localStorage.getItem('payment-projects') || '[]');
+        let currentFilter = 'all';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupNavigation();
+            setupTabs();
+            setupForms();
+            renderDashboard();
+            renderClients();
+            renderProjects();
+        });
+
+        // Navigation
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const view = item.dataset.view;
+                    switchView(view);
+                });
+            });
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + viewName).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelector(`.nav-item[data-view="${viewName}"]`).classList.add('active');
+            if (viewName === 'dashboard') renderDashboard();
+            if (viewName === 'clients') renderClients();
+            if (viewName === 'projects') renderProjects();
+        }
+
+        // Tabs
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentFilter = tab.dataset.filter;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    renderDashboard();
+                });
+            });
+        }
+
+        // Forms
+        function setupForms() {
+            document.getElementById('client-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const client = {
+                    id: Date.now(),
+                    name: document.getElementById('client-name').value.trim(),
+                    email: document.getElementById('client-email').value.trim(),
+                    rate: document.getElementById('client-rate').value,
+                    notes: document.getElementById('client-notes').value.trim()
+                };
+                clients.push(client);
+                localStorage.setItem('payment-clients', JSON.stringify(clients));
+                document.getElementById('client-form').reset();
+                closeModal('client-modal');
+                renderClients();
+            });
+
+            document.getElementById('project-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const project = {
+                    id: Date.now(),
+                    clientId: document.getElementById('project-client').value,
+                    name: document.getElementById('project-name').value.trim(),
+                    amount: parseFloat(document.getElementById('project-amount').value),
+                    dueDate: document.getElementById('project-due').value,
+                    status: document.getElementById('project-status').value,
+                    createdAt: new Date().toISOString(),
+                    milestones: []
+                };
+                projects.push(project);
+                localStorage.setItem('payment-projects', JSON.stringify(projects));
+                document.getElementById('project-form').reset();
+                closeModal('project-modal');
+                renderDashboard();
+                renderProjects();
+            });
+
+            document.getElementById('milestone-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const projectId = parseInt(document.getElementById('milestone-project-id').value);
+                const milestone = {
+                    id: Date.now(),
+                    name: document.getElementById('milestone-name').value.trim(),
+                    amount: parseFloat(document.getElementById('milestone-amount').value),
+                    released: false
+                };
+                projects = projects.map(p => {
+                    if (p.id === projectId) {
+                        p.milestones.push(milestone);
+                    }
+                    return p;
+                });
+                localStorage.setItem('payment-projects', JSON.stringify(projects));
+                closeModal('milestone-modal');
+                renderDashboard();
+                renderProjects();
+            });
+        }
+
+        // Render Dashboard
+        function renderDashboard() {
+            const now = new Date();
+            const thisMonth = now.getMonth();
+            const thisYear = now.getFullYear();
+
+            let outstanding = 0, overdue = 0, thisMonthRevenue = 0, thisMonthPaid = 0;
+
+            projects.forEach(p => {
+                const amount = p.milestones.length > 0 
+                    ? p.milestones.filter(m => !m.released).reduce((sum, m) => sum + m.amount, 0)
+                    : p.amount;
+                
+                if (p.status === 'sent' || p.status === 'draft') {
+                    outstanding += amount;
+                    if (p.dueDate && new Date(p.dueDate) < now) {
+                        overdue += amount;
+                    }
+                }
+                
+                const createdMonth = new Date(p.createdAt).getMonth();
+                const createdYear = new Date(p.createdAt).getFullYear();
+                if (createdMonth === thisMonth && createdYear === thisYear) {
+                    if (p.status === 'paid') {
+                        thisMonthPaid += p.amount;
+                    } else {
+                        thisMonthRevenue += p.amount;
+                    }
+                }
+            });
+
+            document.getElementById('stat-outstanding').textContent = '$' + outstanding.toLocaleString();
+            document.getElementById('stat-overdue').textContent = '$' + overdue.toLocaleString();
+            document.getElementById('stat-revenue').textContent = '$' + thisMonthRevenue.toLocaleString();
+            document.getElementById('stat-paid').textContent = '$' + thisMonthPaid.toLocaleString();
+
+            renderInvoices();
+        }
+
+        function renderInvoices() {
+            const container = document.getElementById('invoices-container');
+            
+            let filtered = currentFilter === 'all' 
+                ? projects 
+                : projects.filter(p => p.status === currentFilter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>No invoices found</p></div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(p => {
+                const client = clients.find(c => c.id == p.clientId) || {name: 'Unknown'};
+                const isOverdue = p.dueDate && new Date(p.dueDate) < new Date() && p.status !== 'paid';
+                const displayAmount = p.milestones.length > 0
+                    ? p.milestones.reduce((sum, m) => sum + (m.released ? 0 : m.amount), 0)
+                    : p.amount;
+                
+                return `
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                            <div>
+                                <div style="font-weight:600;font-size:15px;">${escapeHtml(p.name)}</div>
+                                <div style="font-size:13px;color:#6B7280;">${escapeHtml(client.name)}</div>
+                            </div>
+                            <span class="status-badge status-${isOverdue ? 'overdue' : p.status}">${isOverdue ? 'Overdue' : p.status}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+                            <div style="font-size:20px;font-weight:700;color:#1F2937;">$${displayAmount.toLocaleString()}</div>
+                            <div style="font-size:13px;color:#6B7280;">${p.dueDate ? 'Due: ' + p.dueDate : 'No due date'}</div>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                            ${p.status !== 'paid' ? `<button class="btn btn-small btn-success" onclick="markPaid(${p.id})">Mark Paid</button>` : ''}
+                            <button class="btn btn-small btn-secondary" onclick="openMilestoneModal(${p.id})">+ Milestone</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteProject(${p.id})">Delete</button>
+                        </div>
+                        ${p.milestones.length > 0 ? `
+                            <div style="margin-top:16px;padding-top:12px;border-top:1px solid #E5E7EB;">
+                                <div style="font-size:12px;font-weight:600;color:#6B7280;margin-bottom:8px;">Milestones</div>
+                                ${p.milestones.map(m => `
+                                    <div class="milestone">
+                                        <div class="milestone-info">
+                                            <div class="milestone-title">${escapeHtml(m.name)}</div>
+                                            <div class="milestone-amount">$${m.amount}</div>
+                                        </div>
+                                        <span class="milestone-status ${m.released ? 'milestone-released' : 'milestone-pending'}">${m.released ? 'Released' : 'Pending'}</span>
+                                        ${!m.released ? `<button class="btn btn-small btn-success" onclick="releaseMilestone(${p.id},${m.id})">Release</button>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render Clients
+        function renderClients() {
+            const container = document.getElementById('clients-container');
+            
+            if (clients.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>No clients yet</p></div>';
+                return;
+            }
+
+            container.innerHTML = clients.map(c => `
+                <div class="card">
+                    <div style="font-weight:600;font-size:16px;">${escapeHtml(c.name)}</div>
+                    <div style="font-size:13px;color:#6B7280;margin-top:4px;">${escapeHtml(c.email)}</div>
+                    ${c.rate ? `<div style="font-size:13px;color:#6B7280;margin-top:4px;">Rate: $${c.rate}/hr</div>` : ''}
+                    ${c.notes ? `<div style="font-size:13px;color:#6B7280;margin-top:8px;padding-top:8px;border-top:1px solid #E5E7EB;">${escapeHtml(c.notes)}</div>` : ''}
+                    <button class="btn btn-small btn-danger" style="margin-top:12px;" onclick="deleteClient(${c.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        // Render Projects
+        function renderProjects() {
+            const container = document.getElementById('projects-container');
+            
+            if (projects.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📁</div><p>No projects yet</p></div>';
+                return;
+            }
+
+            container.innerHTML = projects.map(p => {
+                const client = clients.find(c => c.id == p.clientId) || {name: 'Unknown'};
+                return `
+                    <div class="card">
+                        <div style="font-weight:600;font-size:16px;">${escapeHtml(p.name)}</div>
+                        <div style="font-size:13px;color:#6B7280;">${escapeHtml(client.name)}</div>
+                        <div style="font-size:18px;font-weight:700;margin-top:8px;">$${p.amount.toLocaleString()}</div>
+                        <span class="status-badge status-${p.status}" style="margin-top:8px;">${p.status}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            // Update client dropdown in project form
+            const select = document.getElementById('project-client');
+            select.innerHTML = '<option value="">Select client</option>' + 
+                clients.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        }
+
+        // Actions
+        function markPaid(id) {
+            projects = projects.map(p => p.id === id ? {...p, status: 'paid'} : p);
+            localStorage.setItem('payment-projects', JSON.stringify(projects));
+            renderDashboard();
+        }
+
+        function deleteProject(id) {
+            if (confirm('Delete this project?')) {
+                projects = projects.filter(p => p.id !== id);
+                localStorage.setItem('payment-projects', JSON.stringify(projects));
+                renderDashboard();
+                renderProjects();
+            }
+        }
+
+        function deleteClient(id) {
+            if (confirm('Delete this client?')) {
+                clients = clients.filter(c => c.id !== id);
+                localStorage.setItem('payment-clients', JSON.stringify(clients));
+                renderClients();
+            }
+        }
+
+        function releaseMilestone(projectId, milestoneId) {
+            projects = projects.map(p => {
+                if (p.id === projectId) {
+                    p.milestones = p.milestones.map(m => m.id === milestoneId ? {...m, released: true} : m);
+                }
+                return p;
+            });
+            localStorage.setItem('payment-projects', JSON.stringify(projects));
+            renderDashboard();
+        }
+
+        // Modals
+        function openClientModal() { document.getElementById('client-modal').classList.add('active'); }
+        function openProjectModal() { 
+            if (clients.length === 0) {
+                alert('Please add a client first!');
+                return switchView('clients');
+            }
+            document.getElementById('project-modal').classList.add('active'); 
+        }
+        function openMilestoneModal(projectId) {
+            document.getElementById('milestone-project-id').value = projectId;
+            document.getElementById('milestone-modal').classList.add('active');
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // Export
+        function exportInvoicesCSV() {
+            const csv = 'Project,Client,Amount,Due Date,Status,Created\n' + 
+                projects.map(p => {
+                    const client = clients.find(c => c.id == p.clientId) || {name: 'Unknown'};
+                    return `"${p.name}","${client.name}",${p.amount},"${p.dueDate || ''}","${p.status}","${p.createdAt}"`;
+                }).join('\n');
+            downloadCSV(csv, 'invoices.csv');
+        }
+
+        function exportClientsCSV() {
+            const csv = 'Name,Email,Rate,Notes\n' + 
+                clients.map(c => `"${c.name}","${c.email}","${c.rate || ''}","${c.notes || ''}"`).join('\n');
+            downloadCSV(csv, 'clients.csv');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
+
+        function clearAllData() {
+            if (confirm('DELETE ALL DATA? This cannot be undone.')) {
+                clients = [];
+                projects = [];
+                localStorage.setItem('payment-clients', JSON.stringify(clients));
+                localStorage.setItem('payment-projects', JSON.stringify(projects));
+                renderDashboard();
+                renderClients();
+                renderProjects();
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+    </script>
+</body>
+</html>
